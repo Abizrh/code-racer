@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Input } from "./ui/input";
 
 interface ColumnSort {
   id: string;
@@ -61,7 +60,6 @@ export function DataTable<TData, TValue>({
   const sort = searchParams?.get("sort");
   const [column, order] = sort?.split(".") ?? [];
 
-
   const [sorting, setSorting] = React.useState<SortingState>([
     {
       id: column ?? defaultSorting?.prop,
@@ -80,7 +78,7 @@ export function DataTable<TData, TValue>({
         sort: sorting[0]?.id
           ? `${sorting[0]?.id}.${sorting[0]?.desc ? "desc" : "asc"}`
           : null,
-      })}`
+      })}`,
     );
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,23 +103,23 @@ export function DataTable<TData, TValue>({
 
       return newSearchParams.toString();
     },
-    [searchParams]
+    [searchParams],
   );
+
   return (
     <ShadcnTable
       columns={columns}
-      data={data ?? []}
-      // Rows per page
-      pageCount={pageCount ?? 0}
+      data={data}
+      pageCount={pageCount}
       state={{ sorting, pagination }}
       manualPagination
       manualSorting
       setSorting={setSorting}
       setPagination={setPagination}
       renders={{
-        table: ({ children, tableInstance }) => {
+        table: ({ children }) => {
           return (
-            <div className="rounded-md border mt-8 mb-4">
+            <div className="mt-8 mb-4 border rounded-md">
               <Table>{children}</Table>
             </div>
           );
@@ -155,37 +153,36 @@ export function DataTable<TData, TValue>({
         // custom cell by specifying cell function
         bodyCell: ({ children }) => (
           <TableCell className="body-cell">
-            {isPending ? <Skeleton className="h-6 w-20" /> : children}
+            {isPending ? <Skeleton className="w-20 h-6" /> : children}
           </TableCell>
         ),
-        // filter inputs for columns 
+        // filter inputs for columns
         // we can also specify them in our
         // columns
-        filterInput: ({ props }) => null,
+        filterInput: () => null,
         // custom pagination bar
-        paginationBar: ({ tableInstance }) => {
+        paginationBar: () => {
           return (
-            <div className="flex justify-center flex-col-reverse items-center gap-4 py-2 md:flex-row">
+            <div className="flex flex-col-reverse items-center justify-center gap-4 py-2 md:flex-row">
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
                 <div className="flex flex-wrap items-center space-x-2">
                   <span className="text-sm font-medium">Rows per page</span>
                   <Select
                     value={per_page ?? "10"}
                     onValueChange={(value) => {
-                      console.log(sort);
                       startTransition(() => {
                         router.push(
                           `${pathname}?${createQueryString({
                             page: 1,
                             per_page: value,
                             sort,
-                          })}`
+                          })}`,
                         );
                       });
                     }}
                     disabled={isPending}
                   >
-                    <SelectTrigger className="h-8 w-16">
+                    <SelectTrigger className="w-16 h-8">
                       <SelectValue placeholder={per_page} />
                     </SelectTrigger>
                     <SelectContent>
@@ -197,30 +194,27 @@ export function DataTable<TData, TValue>({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="text-sm font-medium">
-                  {`Page ${page} of ${pageCount}`}
-                </div>
+                <div className="text-sm font-medium">{`Page ${page} of ${pageCount}`}</div>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="w-8 h-8"
                     onClick={() => {
                       startTransition(() => {
-                        console.log(sort);
                         router.push(
                           `${pathname}?${createQueryString({
                             page: 1,
                             per_page,
                             sort,
-                          })}`
+                          })}`,
                         );
                       });
                     }}
                     disabled={Number(page) === 1 || isPending}
                   >
                     <Icons.chevronsLeft
-                      className="h-5 w-5"
+                      className="w-5 h-5"
                       aria-hidden="true"
                     />
                     <span className="sr-only">First page</span>
@@ -228,7 +222,7 @@ export function DataTable<TData, TValue>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="w-8 h-8"
                     onClick={() => {
                       startTransition(() => {
                         router.push(
@@ -236,19 +230,19 @@ export function DataTable<TData, TValue>({
                             page: Number(page) - 1,
                             per_page,
                             sort,
-                          })}`
+                          })}`,
                         );
                       });
                     }}
                     disabled={Number(page) === 1 || isPending}
                   >
-                    <Icons.chevronLeft className="h-5 w-5" aria-hidden="true" />
+                    <Icons.chevronLeft className="w-5 h-5" aria-hidden="true" />
                     <span className="sr-only">Previous page</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="w-8 h-8"
                     onClick={() => {
                       startTransition(() => {
                         router.push(
@@ -256,14 +250,14 @@ export function DataTable<TData, TValue>({
                             page: Number(page) + 1,
                             per_page,
                             sort,
-                          })}`
+                          })}`,
                         );
                       });
                     }}
                     disabled={Number(page) >= (pageCount ?? 1) || isPending}
                   >
                     <Icons.chevronRight
-                      className="h-5 w-5"
+                      className="w-5 h-5"
                       aria-hidden="true"
                     />
                     <span className="sr-only">Next page</span>
@@ -271,20 +265,20 @@ export function DataTable<TData, TValue>({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="w-8 h-8"
                     onClick={() => {
                       router.push(
                         `${pathname}?${createQueryString({
                           page: pageCount ?? 1,
                           per_page,
                           sort,
-                        })}`
+                        })}`,
                       );
                     }}
                     disabled={Number(page) >= (pageCount ?? 1) || isPending}
                   >
                     <Icons.chevronsRight
-                      className="h-5 w-5"
+                      className="w-5 h-5"
                       aria-hidden="true"
                     />
                     <span className="sr-only">Last page</span>

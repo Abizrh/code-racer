@@ -1,20 +1,21 @@
-import { Navigation, ChevronDown } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 
-import { Card } from "@/components/ui/card";
-import {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-} from "@/components/ui/hover-card";
 import { prisma } from "@/lib/prisma";
-import { ResultsTable } from "@/components/results-table";
-import { Result } from "@prisma/client";
+import { UsersTable } from "./users-table";
+import { User, Result } from "@prisma/client";
+import { Heading } from "@/components/ui/heading";
 
 interface LeaderboardPageProps {
   searchParams: {
     [key: string]: string | string[] | undefined;
   };
+}
+
+function calculateUsersAverage(array: any[], key: string) {
+  const overall = array.reduce((acc, obj) => {
+    return Number(obj[key]) + acc;
+  }, 0);
+  return (overall / array.length).toFixed(2);
 }
 
 export default async function LeaderboardPage({
@@ -32,37 +33,70 @@ export default async function LeaderboardPage({
   const [column, order] =
     typeof sort === "string"
       ? (sort.split(".") as [
-          keyof Result | undefined,
-          "asc" | "desc" | undefined
+          keyof User | "Races played" | undefined,
+          "asc" | "desc" | undefined,
         ])
       : [];
 
-  const { results, totalResults } = await prisma.$transaction(async (tx) => {
-    const results = await prisma.result.findMany({
-      take,
-      skip,
-      orderBy: {
-        [column ?? "takenTime"]: order,
-      },
-      include: {
-        user: true,
+  const { users, totalUsers } = await prisma.$transaction(async () => {
+    let users;
+
+    if (column === "Races played") {
+      users = await prisma.user.findMany({
+        take,
+        skip,
+        orderBy: {
+          results: {
+            _count: order,
+          },
+        },
+        include: {
+          results: true,
+        },
+        where: {
+          results: {
+            some: {},
+          },
+        },
+      });
+    } else {
+      users = await prisma.user.findMany({
+        take,
+        skip,
+        orderBy: {
+          [column ?? ""]: order,
+        },
+        include: {
+          results: true,
+        },
+        where: {
+          results: {
+            some: {},
+          },
+        },
+      });
+    }
+
+    const totalUsers = await prisma.user.count({
+      where: {
+        results: {
+          some: {},
+        },
       },
     });
 
-    const totalResults = await prisma.result.count();
-
     return {
-      results,
-      totalResults,
+      users,
+      totalUsers,
     };
   });
 
-  const pageCount = Math.ceil(totalResults / take);
+  const pageCount = totalUsers === 0 ? 1 : Math.ceil(totalUsers / take);
 
   return (
-    <div className="container md:min-h-[calc(100vh-12rem)] max-w-4xl">
-      <h1 className="text-3xl text-foreground my-4">Leaderboard.</h1>
-      <ResultsTable data={results} pageCount={pageCount} />
+    <div className="pt-12">
+      <Heading title="Leaderboard" description="Find your competition" />
+      <UsersTable data={users} pageCount={pageCount} />
     </div>
   );
 }

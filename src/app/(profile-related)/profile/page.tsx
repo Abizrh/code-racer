@@ -2,8 +2,13 @@ import Image from "next/image";
 
 import { getCurrentUser } from "@/lib/session";
 
+import Achievement from "@/components/achievement";
+import { AddBio } from "@/components/add-bio";
+import { achievements } from "@/config/achievements";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ChangeNameForm, ProfileNav } from "./_components";
+import ChangeNameForm from "./_components/change-name-form";
+import ProfileNav from "./_components/profile-nav";
 
 export const metadata = {
   title: "Profile Page",
@@ -11,19 +16,21 @@ export const metadata = {
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
-  const photoURL = user?.image;
-  const displayName = user?.name;
-  const uid = user?.id;
-  {
-    /** Static data unrelated to auth for now */
-  }
+  const photoURL = user?.image as string;
+  const displayName = user?.name as string;
+  const uid = user?.id as string;
+  const userAchievements = await prisma.achievement.findMany({
+    where: {
+      userId: uid,
+    },
+  });
   const totalPoints = 0;
 
   return (
     <main className="py-8 grid place-items-center h-[clamp(40rem,82.5dvh,50rem)]">
-      <div className="overflow-hidden relative w-[95%] max-w-[22.5rem] h-[32.5rem] rounded-2xl border-2 border-solid border-secondary-foreground">
+      <div className="relative w-[95%] max-w-[22.5rem] rounded-2xl border-2 border-solid border-secondary-foreground">
         <article className="flex flex-col items-center gap-2 p-2">
-          <ProfileNav displayName={displayName as string} uid={uid as string} />
+          <ProfileNav displayName={displayName} />
           <div className="pt-2 pb-1">
             <Link
               href={`/view-photo?photoURL=${photoURL}`}
@@ -44,7 +51,31 @@ export default async function ProfilePage() {
             </Link>
           </div>
           <ChangeNameForm displayName={displayName} />
-          <span>Total Points: {totalPoints}</span>
+          <AddBio />
+          <span className="mt-10">Total Points: {totalPoints}</span>
+
+          <h2>Your Achievements</h2>
+          {userAchievements.length ? (
+            <ul className="gap-4 w-fit max-w-[292px] flex items-center flex-wrap p-2 rounded-sm">
+              {userAchievements.map(({ achievementType, unlockedAt }) => {
+                const achievement = achievements.find(
+                  (achievement) => achievement.type === achievementType,
+                );
+                if (!achievement) return null;
+                return (
+                  <Achievement
+                    key={achievement.type}
+                    achievement={{
+                      name: achievement.name,
+                      description: achievement.description,
+                      unlockedAt,
+                      image: achievement.image,
+                    }}
+                  />
+                );
+              })}
+            </ul>
+          ) : null}
         </article>
       </div>
     </main>
