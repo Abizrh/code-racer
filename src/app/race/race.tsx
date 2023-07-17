@@ -16,11 +16,7 @@ import RaceTracker from "./race-tracker";
 import Code from "./code";
 import { saveUserResultAction } from "../_actions/result";
 import RaceDetails from "./_components/race-details";
-
-interface RaceProps {
-  user?: User;
-  snippet: Snippet;
-}
+import RaceTimer from "./race-timer";
 
 function calculateCPM(
   numberOfCharacters: number,
@@ -37,7 +33,13 @@ function calculateAccuracy(
   return (1 - errorsCount / numberOfCharacters) * 100;
 }
 
-export default function Race({ user, snippet }: RaceProps) {
+export default function Race({
+  user,
+  snippet,
+}: {
+  user?: User;
+  snippet: Snippet;
+}) {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [input, setInput] = useState("");
   const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
@@ -57,6 +59,7 @@ export default function Race({ user, snippet }: RaceProps) {
     .filter((index) => index !== -1);
 
   const isRaceFinished = input === code;
+  const showRaceTimer = !!startTime && !isRaceFinished;
 
   async function endRace() {
     if (!startTime) return;
@@ -441,7 +444,8 @@ export default function Race({ user, snippet }: RaceProps) {
           className="absolute inset-y-0 left-0 w-full h-full p-8 rounded-md -z-40 focus:outline outline-blue-500"
           onPaste={(e) => e.preventDefault()}
         />
-        <div className="self-start">
+
+        <div className="flex justify-between">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -454,6 +458,7 @@ export default function Race({ user, snippet }: RaceProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {showRaceTimer && <RaceTimer />}
         </div>
       </div>
 
